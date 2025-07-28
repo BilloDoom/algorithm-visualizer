@@ -15,8 +15,10 @@
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
     "axios": "^1.10.0",
+    "p5": "^2.0.3",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "react-p5": "^1.4.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.30.1",

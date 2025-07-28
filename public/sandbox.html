@@ -1,0 +1,29 @@
+<html>
+  <head>
+    <script type="module">
+      import { createDrawAPI } from '/lib/drawAPI.js';
+
+      const draw = createDrawAPI(() => ({
+        push: (shape) => {
+          parent.postMessage({ type: 'draw', shape }, '*');
+        },
+        length: 0
+      }));
+
+      window.draw = draw;
+
+      function print(msg) {
+        parent.postMessage({ type: 'log', message: String(msg) }, '*');
+      }
+
+      window.addEventListener("message", (event) => {
+        try {
+          eval(event.data);
+        } catch (e) {
+          print("Runtime error: " + e.toString());
+        }
+      });
+    </script>
+  </head>
+  <body></body>
+</html>
