@@ -1,69 +1,46 @@
+/* src/styles/base.css */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
 html, body, #root {
   height: 100%;
-  margin: 0;
-  font-family: sans-serif;
+  width: 100%;
+  background-color: #1e1e1e;
+  color: #d4d4d4;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-.app-container {
-  display: flex;
-  height: 100vh;
-  width: 100vw;
+button, input, textarea {
+  background-color: #2d2d2d;
+  color: #d4d4d4;
+  border: 1px solid #444;
+  padding: 8px 12px;
+  font-size: 14px;
+  outline: none;
 }
 
-/* Left: Algorithm List */
-.algorithm-list {
-  width: 200px;
-  padding: 10px;
-  background-color: #f1f1f1;
-  border-right: 1px solid #ccc;
-  overflow-y: auto;
+button:hover {
+  background-color: #3a3a3a;
+  cursor: pointer;
 }
 
-/* Right: Editor */
-.editor-panel {
-  width: 35%;
-  height: 100%;
-  border-left: 1px solid #ccc;
+code, pre {
+  font-family: 'Fira Code', monospace;
+  background-color: #252526;
+  color: #dcdcdc;
 }
 
-/* Center: Visualization + Logger */
-.main-display {
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column;
-  padding: 10px;
-  overflow-y: auto;
+a {
+  color: #61dafb;
+  text-decoration: none;
 }
 
-/* Visualization */
-.visualization-area {
-  flex: 2;
-  background: #e3e3ff;
-  margin-bottom: 10px;
-  padding: 10px;
-  border-radius: 5px;
-}
-
-.viz-box {
-  height: 100%;
-  background: white;
-  border: 1px dashed #aaa;
-  padding: 10px;
-}
-
-/* Logger */
-.logger {
-  flex: 1;
-  background: #fefefe;
-  padding: 10px;
-  border-radius: 5px;
-  border-top: 1px solid #ddd;
-}
-
-.log-box {
-  background: #fafafa;
-  height: 100%;
-  overflow-y: auto;
-  border: 1px solid #ddd;
-  padding: 10px;
+a:hover {
+  text-decoration: underline;
 }
