@@ -1,6 +1,9 @@
 import { functionMappings } from './mappings/stdlib.js';
 
+const declaredVars = new Set();
+
 export function transpile(ast) {
+    declaredVars.clear();
     return generateProgram(ast);
 }
 
@@ -16,7 +19,10 @@ function generateStatement(stmt) {
             return `function ${stmt.name.name}(${args}) {\n${indent(body)}\n}`;
 
         case 'Assignment':
-            return `${isDefined(stmt.id.name) ? '' : 'let '}${stmt.id.name} = ${generateExpression(stmt.value)};`;
+            const name = stmt.id.name;
+            const declaration = declaredVars.has(name) ? '' : 'let ';
+            declaredVars.add(name);
+            return `${declaration}${name} = ${generateExpression(stmt.value)};`;
 
         case 'IfStatement':
             const ifBody = stmt.body.body.map(generateStatement).join('\n');
