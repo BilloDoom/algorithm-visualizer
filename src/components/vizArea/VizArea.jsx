@@ -1,7 +1,6 @@
 import React, { useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
 import './VizArea.css';
 import { compileAndRun } from '../../compiler/compileAndRun.js';
-import { createScene3D } from '../../api/createScene.js';
 import { createRuntime } from '../../api/runtime.js';
 
 const VizArea = forwardRef(function VizArea({ code, onLog }, ref) {
@@ -14,12 +13,16 @@ const VizArea = forwardRef(function VizArea({ code, onLog }, ref) {
   // Expose run function to parent
   useImperativeHandle(ref, () => ({
     runVisualization: () => {
-      if (!sceneRef.current || !cameraRef.current) return;
+      if (!sceneRef.current && !cameraRef.current) {
+        // no scene yet, must be created by runtime calls
+      }
 
-      // Clear scene except helpers/lights
-      sceneRef.current.children = sceneRef.current.children.filter(
-        (obj) => obj.isGridHelper || obj.isLight || obj.isAxesHelper
-      );
+      // Clear scene except helpers/lights/axes
+      if (sceneRef.current) {
+        sceneRef.current.children = sceneRef.current.children.filter(
+          (obj) => obj.isGridHelper || obj.isLight || obj.isAxesHelper
+        );
+      }
 
       const runtime = createRuntime({
         mount: mountRef.current,
@@ -41,26 +44,19 @@ const VizArea = forwardRef(function VizArea({ code, onLog }, ref) {
   }));
 
   useEffect(() => {
-    const mount = mountRef.current;
-    if (!mount) return;
-
-    // Default 3D scene setup
-    const { scene, camera, renderer, controls } = createScene3D(mount);
-    sceneRef.current = scene;
-    cameraRef.current = camera;
-    rendererRef.current = renderer;
-    controlsRef.current = controls;
-
     const animate = () => {
       requestAnimationFrame(animate);
-      controlsRef.current?.update();
-      rendererRef.current.render(sceneRef.current, cameraRef.current);
+
+      if (rendererRef.current && sceneRef.current && cameraRef.current) {
+        controlsRef.current?.update();
+        rendererRef.current.render(sceneRef.current, cameraRef.current);
+      }
     };
     animate();
 
     return () => {
-      if (mount && rendererRef.current?.domElement) {
-        mount.removeChild(rendererRef.current.domElement);
+      if (mountRef.current && rendererRef.current?.domElement) {
+        mountRef.current.removeChild(rendererRef.current.domElement);
         rendererRef.current.dispose();
       }
       controlsRef.current?.dispose();

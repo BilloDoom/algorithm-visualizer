@@ -54,14 +54,9 @@ function generateExpression(expr) {
         case 'BinaryExpression':
             return `(${generateExpression(expr.left)} ${expr.operator} ${generateExpression(expr.right)})`;
         case 'CallExpression': {
-            let calleeName = expr.callee.name;
-            calleeName = toCamelCase(calleeName);
-
+            const calleeName = toCamelCase(expr.callee.name);
             const args = expr.arguments.map(generateExpression).join(', ');
-
-            const mappedName = functionMappings[calleeName] || calleeName;
-
-            return `${mappedName}(${args})`;
+            return `${calleeName}(${args})`;
         }
         default:
             throw new Error(`Unknown expression type: ${expr.type}`);

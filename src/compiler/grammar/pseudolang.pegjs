@@ -132,10 +132,13 @@ String
 Char
   = !["\n\r] .
 
-// === Whitespace ===
-_  = [ \t]*                 // Optional whitespace (no newlines)
-__ = [ \t]+                 // Required space
-_NL = ([ \t]* ("\r"? "\n"))+  // Required newline(s)
+// === Whitespace & Comments ===
+_   = (Whitespace / Comment)*
+__  = (Whitespace / Comment)+
+_NL = ([ \t]* ("\r"? "\n"))+
+
+Whitespace = [ \t]
+Comment    = "//" [^\n]*
 
 Letter = [a-zA-Z_]
 Digit  = [0-9]

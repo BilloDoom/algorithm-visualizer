@@ -9,21 +9,52 @@ export function registerPseudolang(monacoInstance) {
     keywords: ['def', 'if', 'while', 'for', 'return', 'true', 'false'],
     tokenizer: {
       root: [
+        // Keywords
         [/\b(def|if|while|for|return|true|false)\b/, 'keyword'],
+
+        // Strings
         [/"[^"]*"/, 'string'],
+
+        // Numbers
         [/[0-9]+/, 'number'],
+
+        // Function calls (identifier followed by "(")
+        [/[a-zA-Z_][a-zA-Z0-9_]*(?=\s*\()/, 'function'],
+
+        // Identifiers
         [/[a-zA-Z_][a-zA-Z0-9_]*/, 'identifier'],
+
+        // Operators
         [/[:=]/, 'operator'],
+
+        // Comments
+        [/\/\/.*$/, 'comment'],
       ],
     },
   });
+
+  // --- Theme override for pseudolang ---
+  monacoInstance.editor.defineTheme('pseudolang-theme', {
+    base: 'vs-dark',
+    inherit: true,
+    rules: [
+      { token: 'comment', foreground: '6A9955' },   // green
+      { token: 'function', foreground: 'DCDCAA' },  // yellow-ish
+      { token: 'keyword', foreground: '569CD6' },   // blue
+      { token: 'string', foreground: 'CE9178' },    // orange
+      { token: 'number', foreground: 'B5CEA8' },    // light green
+    ],
+    colors: {},
+  });
+
+  // Apply theme automatically
+  monacoInstance.editor.setTheme('pseudolang-theme');
 
   // --- Auto-closing brackets & quotes ---
   monacoInstance.languages.setLanguageConfiguration('pseudolang', {
     autoClosingPairs: [
       { open: '(', close: ')' },
       { open: '[', close: ']' },
-      { open: '{', close: '}' },
       { open: '"', close: '"' },
     ],
   });
@@ -39,7 +70,19 @@ export function registerPseudolang(monacoInstance) {
           insertText: keyword + ' ',
         })),
 
-        // Built-in functions
+        //#region Built-in functions
+        {
+          label: 'createCamera3D',
+          kind: monaco.languages.CompletionItemKind.Function,
+          insertText: 'createCamera3D(${1:px}, ${2:py}, ${3:pz}, ${4:lx}, ${5:ly}, ${6:lz})',
+          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+        },
+        {
+          label: 'createCamera2D',
+          kind: monaco.languages.CompletionItemKind.Function,
+          insertText: 'createCamera2D(${1:x}, ${2:y}, ${3:zoom})',
+          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+        },
         {
           label: 'print',
           kind: monaco.languages.CompletionItemKind.Function,
@@ -49,94 +92,11 @@ export function registerPseudolang(monacoInstance) {
         {
           label: 'drawBox',
           kind: monaco.languages.CompletionItemKind.Function,
-          insertText: 'drawBox(${1:label})',
-          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-        },
-        {
-          label: 'drawCircle',
-          kind: monaco.languages.CompletionItemKind.Function,
-          insertText: 'drawCircle(${1:x}, ${2:y}, ${3:radius})',
-          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-        },
-        {
-          label: 'drawRect',
-          kind: monaco.languages.CompletionItemKind.Function,
-          insertText: 'drawRect(${1:x}, ${2:y}, ${3:width}, ${4:height})',
-          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-        },
-        {
-          label: 'highlight',
-          kind: monaco.languages.CompletionItemKind.Function,
-          insertText: 'highlight(${1:node})',
-          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-        },
-
-        // Scaffolds
-        {
-          label: 'def function',
-          kind: monaco.languages.CompletionItemKind.Snippet,
-          insertText: [
-            'def ${1:name}(${2:params}):',
-            '    ${3:pass}',
-          ].join('\n'),
-          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-        },
-        {
-          label: 'if',
-          kind: monaco.languages.CompletionItemKind.Snippet,
-          insertText: [
-            'if ${1:condition}:',
-            '    ${2:pass}',
-          ].join('\n'),
-          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-        },
-        {
-          label: 'while',
-          kind: monaco.languages.CompletionItemKind.Snippet,
-          insertText: [
-            'while ${1:condition}:',
-            '    ${2:pass}',
-          ].join('\n'),
-          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-        },
-        {
-          label: 'for',
-          kind: monaco.languages.CompletionItemKind.Snippet,
-          insertText: [
-            'for ${1:i} in range(${2:n}):',
-            '    ${3:pass}',
-          ].join('\n'),
+          insertText: 'drawBox(${1:x}, ${2:y}, ${3:z}, ${4:w}, ${5:h}, ${6:d})',
           insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
         },
       ];
       return { suggestions };
     },
-  });
-
-  // --- Error underlines (very basic validation) ---
-  monacoInstance.editor.onDidCreateModel(model => {
-    if (model.getModeId() === 'pseudolang') {
-      model.onDidChangeContent(() => {
-        const text = model.getValue();
-        const markers = [];
-
-        // Simple example: unmatched parentheses
-        const openParens = (text.match(/\(/g) || []).length;
-        const closeParens = (text.match(/\)/g) || []).length;
-        if (openParens !== closeParens) {
-          markers.push({
-            severity: monaco.MarkerSeverity.Error,
-            message: 'Unmatched parentheses',
-            startLineNumber: 1,
-            startColumn: 1,
-            endLineNumber: 1,
-            endColumn: 1,
-          });
-        }
-
-        // Apply markers
-        monaco.editor.setModelMarkers(model, 'pseudolang-checker', markers);
-      });
-    }
   });
 }
