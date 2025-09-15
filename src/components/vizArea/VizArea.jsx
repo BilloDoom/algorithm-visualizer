@@ -1,62 +1,73 @@
-import React, { useRef, useEffect } from 'react';
-import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import React, { useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
 import './VizArea.css';
-import { drawWireBox } from '../../api/drawBox';
+import { compileAndRun } from '../../compiler/compileAndRun.js';
+import { createScene3D } from '../../api/createScene.js';
+import { createRuntime } from '../../api/runtime.js';
 
-export default function VizArea({ runVisualization }) {
-    const mountRef = useRef();
+const VizArea = forwardRef(function VizArea({ code, onLog }, ref) {
+  const mountRef = useRef();
+  const sceneRef = useRef();
+  const cameraRef = useRef();
+  const rendererRef = useRef();
+  const controlsRef = useRef();
 
-    useEffect(() => {
-        const mount = mountRef.current;
-        if (!mount) return;
+  // Expose run function to parent
+  useImperativeHandle(ref, () => ({
+    runVisualization: () => {
+      if (!sceneRef.current || !cameraRef.current) return;
 
-        const width = mount.clientWidth;
-        const height = mount.clientHeight;
+      // Clear scene except helpers/lights
+      sceneRef.current.children = sceneRef.current.children.filter(
+        (obj) => obj.isGridHelper || obj.isLight || obj.isAxesHelper
+      );
 
-        const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(width, height);
-        mount.appendChild(renderer.domElement);
-        camera.position.z = 10;
+      const runtime = createRuntime({
+        mount: mountRef.current,
+        sceneRef,
+        cameraRef,
+        rendererRef,
+        controlsRef,
+        onLog,
+      });
 
-        const controls = new OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = true;
-        controls.dampingFactor = 0.05;
-        controls.target.set(0, 0, 0);
-        controls.update();
+      try {
+        compileAndRun(code, runtime);
+      } catch (err) {
+        const msg = `Runtime Error: ${err.message}`;
+        console.error(msg);
+        if (onLog) onLog(msg);
+      }
+    },
+  }));
 
-        const gridHelper = new THREE.GridHelper(20, 20);
-        scene.add(gridHelper);
+  useEffect(() => {
+    const mount = mountRef.current;
+    if (!mount) return;
 
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-        scene.add(ambientLight);
+    // Default 3D scene setup
+    const { scene, camera, renderer, controls } = createScene3D(mount);
+    sceneRef.current = scene;
+    cameraRef.current = camera;
+    rendererRef.current = renderer;
+    controlsRef.current = controls;
 
-        drawWireBox(scene, {
-            origin: [0, 0, 0],
-            size: [1, 1, 1],
-            color: 0xff0000
-        });
+    const animate = () => {
+      requestAnimationFrame(animate);
+      controlsRef.current?.update();
+      rendererRef.current.render(sceneRef.current, cameraRef.current);
+    };
+    animate();
 
+    return () => {
+      if (mount && rendererRef.current?.domElement) {
+        mount.removeChild(rendererRef.current.domElement);
+        rendererRef.current.dispose();
+      }
+      controlsRef.current?.dispose();
+    };
+  }, []);
 
-        runVisualization?.(scene, camera);
+  return <div className="viz-area" ref={mountRef}></div>;
+});
 
-        const animate = () => {
-            requestAnimationFrame(animate);
-            controls.update();
-            renderer.render(scene, camera);
-        };
-        animate();
-
-        return () => {
-            if (mount && renderer.domElement) {
-                mount.removeChild(renderer.domElement);
-                renderer.dispose();
-            }
-            controls.dispose();
-        };
-    }, [runVisualization]);
-
-    return <div className="viz-area" ref={mountRef}></div>;
-}
+export default VizArea;

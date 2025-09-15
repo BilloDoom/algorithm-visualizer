@@ -1,7 +1,6 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { parse } from './compiler/parser';
 import { transpile } from './compiler/transpiler';
-import { drawingAPI } from './compiler/runtime';
 
 import CodeEditor from './components/codeEditor/CodeEditor';
 import Header from './components/header/Header';
@@ -11,6 +10,7 @@ import Logger from './components/logger/Logger';
 export default function App() {
   const [code, setCode] = useState('// write your algorithm here');
   const [logs, setLogs] = useState([]);
+  const vizRef = useRef();
 
   const handleCompile = () => {
     try {
@@ -23,6 +23,7 @@ export default function App() {
     }
   };
 
+  /*
   const handleRun = () => {
     const output = [];
     const originalLog = console.log;
@@ -32,16 +33,8 @@ export default function App() {
     };
 
     try {
-      const ast = parse(code);
-      const js = transpile(ast);
-
-      const sandbox = {
-        ...drawingAPI,
-        print: (...args) => console.log(...args),
-      };
-
-      const userFunc = new Function(...Object.keys(sandbox), js);
-      userFunc(...Object.values(sandbox));
+      // Trigger visualization execution inside VizArea
+      vizRef.current?.runVisualization();
     } catch (err) {
       output.push(`Runtime Error: ${err.message}`);
     } finally {
@@ -49,12 +42,22 @@ export default function App() {
       setLogs(output);
     }
   };
+*/
+
+  const handleRun = () => {
+    try {
+      vizRef.current?.runVisualization();
+    } catch (err) {
+      setLogs((prev) => [...prev, `Runtime Error: ${err.message}`]);
+    }
+  };
+
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
       <Header onCompile={handleCompile} onPlay={handleRun} />
       <div style={{ display: 'flex', flex: 1 }}>
-        <VizArea />
+        <VizArea ref={vizRef} code={code} onLog={(msg) => setLogs((prev) => [...prev, msg])} />
         <div style={{ width: '50%', display: 'flex', flexDirection: 'column' }}>
           <div style={{ flex: 1, overflow: 'hidden' }}>
             <CodeEditor value={code} onChange={setCode} />
